@@ -1,0 +1,114 @@
+#!/bin/sh
+# ####################################################################
+# Authors:
+#  Denis V. Kachurin (d.kachurin@isida.by)
+# ####################################################################
+
+# ####################################################################
+# Constants
+# ####################################################################
+STATE_OK=0
+STATE_WARNING=1
+STATE_CRITICAL=2
+STATE_UNKNOWN=3
+
+error() {
+    echo "$@"
+    exit 1;
+}
+# ####################################################################
+# Show Usage info
+# ####################################################################
+help(){
+    echo "  Usage:
+    ${0} [OPTIONS]
+    Options:
+        -c CRIT
+        -w Warn
+        -H HOST
+        -C community\tSNMP Community; default public
+        -v 1|2|3\tSNMP Version; default 1
+        -d dev\t\tDevice type
+        -t type\t\tSensor type
+        -h|--help\tUsage information"
+    exit 0;
+}
+
+# ####################################################################
+# Find config dir
+# ####################################################################
+get_conf() {
+    for dir in  "/etc/icinga2" "/usr/local/etc/icinga2" ; do
+        test -d "${dir}/snmp-devices" || continue
+        echo $dir
+        return
+    done
+    echo "Devices configuration not found"
+    exit 1
+}
+
+# ####################################################################
+# Load device configuraton
+# ####################################################################
+get_device_config() {
+    local ${2} config_file
+    config_file="${OPT_CONF}/snmp-devices/${1}"
+    test -e ${config_file} || error "${config_file} not exists"
+    . ${config_file} 1>/dev/null 2>/dev/null
+#echo "$paper"| sed 's/ /_/g'
+    eval "echo \"\$$2\""
+# | sed 's/ /_/g'
+}
+
+# ####################################################################
+# Main routine
+# ####################################################################
+query() {
+    echo ${OPT_HOST}
+    echo ${OPT_VER}
+    echo ${OPT_COMMUNITY}
+    echo ${1}
+}
+
+# ####################################################################
+# Main routine
+# ####################################################################
+main() {
+    test ${#} = 0 && (help; exit 1)
+    # Get options
+    for o; do
+    case "${o}" in
+            -H) shift; OPT_HOST="${1}"; shift; ;;
+            -c) shift; OPT_CRIT="${1}"; shift; ;;
+            -w) shift; OPT_WARN="${1}"; shift; ;;
+            -C) shift; OPT_COMMUNITY="${1}"; shift; ;;
+            -v) shift; OPT_VER="${1}"; shift; ;;
+            -d) shift; OPT_DEV="${1}"; shift; ;;
+            -t) shift; OPT_TYPE="${1}"; shift; ;;
+            -r) OPT_RATE="YES"; ;;
+            -*) echo "Unknown option ${o}"; help; exit 1; ;;
+        esac
+    done
+    # Check options
+    test -z "${OPT_HOST}" && error "HOST"
+    test -z "${OPT_DEV}" && error "Device type"
+    test -z "${OPT_TYPE}" && error "Sensor type"
+
+    OPT_VER=${OPT_VER:-1}
+    OPT_COMMUNITY=${OPT_COMMUNITY:-public}
+    OPT_CONF=$(get_conf) || error ${OPT_CONF}
+    OIDS=$(get_device_config ${OPT_DEV} ${OPT_TYPE}) || error ${OIDS}
+#get_device_config ${OPT_DEV} ${OPT_TYPE}
+    IFS="
+"
+    for oid in ${OIDS}; do
+        query ${oid}
+    done
+#echo ${OIDS}
+#echo $OPT_CONF
+#echo ${OPT_VER}
+#echo ${OPT_COMMUNITY}
+}
+
+main "$@"
+#set
