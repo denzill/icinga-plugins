@@ -1,3 +1,57 @@
-#!bin/sh
+#!/bin/sh
 
-SERVICE=``
+
+not_run(){
+	ERR="$ERR
+$1"
+	ERR_COUNT=`expr ${ERR_COUNT} + 1`
+}
+
+check_running(){
+OIFS=$IFS
+IFS='
+'
+	for i in `/usr/local/bin/sudo service $1 status`; do
+		echo $i | grep -Eq  "is not running"  && not_run $i
+		echo $i | grep -Eq  "is running as "  && RUN_COUNT=`expr ${RUN_COUNT} + 1`
+	done
+}
+
+ok(){
+	echo "OK: All services started"
+	exit 0
+}
+
+warning(){
+	exit 1
+}
+
+crit(){
+	echo "CRITICAL: $*"
+	exit 2
+}
+
+unknown(){
+	echo "UNKNOWN: $*"
+	exit 3
+}
+
+SUDO=`whereis -qb sudo`
+
+test -z "${SUDO}" && unknown "Sudo is not installed"
+
+SERVICES=`service -e | grep /usr/local`
+ERR=''
+ERR_COUNT=0
+RUN_COUNT=0
+
+for rc in ${SERVICES}; do
+	svc=`basename ${rc}`
+	check_running ${svc} 2> /dev/null
+done
+
+if [ ${ERR_COUNT} != 0 ]
+then
+	crit "${ERR_COUNT} servics in stopped state: $ERR"
+fi
+ok
