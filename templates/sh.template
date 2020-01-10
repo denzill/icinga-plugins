@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+# check_<?what?>: Nagios Plugin to monitor <?what you want monitor?>
+#
+# https://github.com/denzill/icinga-plugins
+#
+# Copyright (c) 2018-2020, Denis V. Kachurin
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+#
+#    * Redistributions of source code must retain the above copyright notice, this
+#      list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright notice,
+#      this list of conditions and the following disclaimer in the documentation
+#      and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+###### global vars - don't touch ######
+
+PROGNAME="${0##*/}"
+VERSION=?.?.?
+DATE="TODAY DATE"
+PROJECTURL=https://github.com/denzill/icinga-plugins
+MON="TEMPLATE"
+
+###### functions ######
+
+# print version and exit
+print_version() {
+  printf "Nagios Plugin ${PROGNAME} for ${??} v${VERSION} (${DATE})\n\n"
+  printf ${PROJECTURL}"\n\n"
+  exit 0
+}
+
+# print help msg and exit
+print_help() {
+  printf "usage: ${PROGNAME} [options] \n\n"
+  printf "options:\n"
+  printf "  -h\t\tshow this help message and exit.\n\n"
+  printf "  -v\t\tshow version number.\n\n"
+  exit 0
+}
+
+# print state to STDOUT with proper exit code for Nagios
+print_state() {
+  case ${2} in
+    0) STATE=OK;;
+    1) STATE=WARNING;;
+    2) STATE=CRITICAL;;
+    3) STATE=UNKNOWN;;
+  esac
+  printf "${MON} ${STATE} - ${1}\n"
+  exit ${2}
+}
+
+# generate state mesage for Nagios and call print_state
+run_gen_state() {
+  print_state "${MSG_PROBLEMS}${MSG_UPDATES}${MSG_PORTSAGE}. | ${MSG_PERFDATA}${UPDATES_LIST}" ${MSG_STATE}
+}
+
+# main function
+run_main() {
+  run_gen_state
+}
+
+
+###### main ######
+
+while getopts hv opt 2>/dev/null
+do
+  case $opt in
+    h) print_help;;
+    v) print_version;;
+    ?) exit 1;;
+  esac
+done
+
+run_main
