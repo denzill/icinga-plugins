@@ -527,7 +527,7 @@ if($check_type =~ /^temp/) {
 	my $lastSave = $snmp_session->get_request(-varbindlist => [ $S_conf_saved ]);
 	my $uptime = $snmp_session->get_request(-varbindlist => [ $S_up_time ]);
 	if ($lastChange->{$S_conf_changed} == "" or $lastSave->{$S_conf_saved} == ""){
-		$stat = 1;
+		$stat = 0;
 		$msg = "Configuration: WARN - Saved or changed time not set";
 	} elsif ($lastChange->{$S_conf_changed} > $lastSave->{$S_conf_saved}) {
 		$stat = 2;
